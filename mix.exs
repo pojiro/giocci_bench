@@ -21,7 +21,8 @@ defmodule GiocciBench.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:giocci, "~> 0.1"}
+      {:giocci, "~> 0.1", runtime: Mix.env() != :test},
+      {:nimble_csv, "~> 1.2"}
     ]
   end
 end
