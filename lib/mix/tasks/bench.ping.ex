@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Bench.Ping do
 
   @impl true
   def run(args) do
-    Mix.Task.run("app.start")
+    ping_module = Application.get_env(:giocci_bench, :ping_module, Ping)
 
     {opts, _rest, _invalid} = OptionParser.parse(args,
       switches: [targets: :string, count: :integer, timeout_ms: :integer, out_dir: :string]
@@ -34,7 +34,7 @@ defmodule Mix.Tasks.Bench.Ping do
     timeout_ms = Keyword.get(opts, :timeout_ms, 1000)
     out_dir = Keyword.get(opts, :out_dir, "bench_output")
 
-    case Ping.run(targets: targets, count: count, timeout_ms: timeout_ms, out_dir: out_dir) do
+    case ping_module.run(targets: targets, count: count, timeout_ms: timeout_ms, out_dir: out_dir) do
       {:ok, path} ->
         Mix.shell().info("ping CSV written: #{path}")
 
