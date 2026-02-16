@@ -7,7 +7,7 @@ defmodule GiocciBench.Measure.Single do
   @default_iterations 5
   @default_timeout_ms 5_000
   @default_out_dir "giocci_bench_output"
-  @default_cases ["register_client", "save_module", "exec_func"]
+  @default_cases ["register_client", "save_module", "exec_func", "local_exec"]
   @columns [
     :run_id,
     :case_id,
@@ -28,7 +28,7 @@ defmodule GiocciBench.Measure.Single do
   def run(opts \\ []) do
     relay_name = fetch_option(opts, :relay_name, default_relay())
     mfargs = fetch_option(opts, :mfargs, default_mfargs())
-    {module, _func, _args} = mfargs
+    {module, func, args} = mfargs
     warmup = fetch_option(opts, :warmup, @default_warmup)
     iterations = fetch_option(opts, :iterations, @default_iterations)
     timeout_ms = fetch_option(opts, :timeout_ms, @default_timeout_ms)
@@ -38,6 +38,10 @@ defmodule GiocciBench.Measure.Single do
     started_at = DateTime.utc_now() |> DateTime.to_iso8601()
     env = env_info()
     selected_cases = normalize_cases(fetch_option(opts, :cases, @default_cases))
+
+    # local_exec の case_desc を動的に生成
+    local_exec_desc =
+      "#{Module.split(module) |> Enum.join(".")}.#{func}/#{length(args)}"
 
     # ベンチマーク対象の3つのケースを定義
     # 各要素は {case_id, case_desc, fun} のタプル：
@@ -50,7 +54,8 @@ defmodule GiocciBench.Measure.Single do
       {"save_module", "Giocci.save_module/3",
        fn -> Giocci.save_module(relay_name, module, timeout: timeout_ms) end},
       {"exec_func", "Giocci.exec_func/3",
-       fn -> Giocci.exec_func(relay_name, mfargs, timeout: timeout_ms) end}
+       fn -> Giocci.exec_func(relay_name, mfargs, timeout: timeout_ms) end},
+      {"local_exec", local_exec_desc, fn -> apply(module, func, args) end}
     ]
 
     filtered_cases =
@@ -66,7 +71,7 @@ defmodule GiocciBench.Measure.Single do
       |> Enum.with_index(1)
       |> Enum.flat_map(fn {{case_id, case_desc, fun}, case_index} ->
         case_display =
-          if case_id == "exec_func" do
+          if case_id in ["exec_func", "local_exec"] do
             {module, func, args} = mfargs
 
             "#{case_desc} (module: #{inspect(module)}, func: #{inspect(func)}, args: #{inspect(args)})"
@@ -111,9 +116,9 @@ defmodule GiocciBench.Measure.Single do
       for iteration <- 1..iterations do
         {elapsed_ms, result} = timed_call(fun)
 
-        # exec_func の場合のみ engine_elapsed_ms を取得
+        # exec_func と local_exec の場合のみ engine_elapsed_ms を取得
         engine_elapsed_ms =
-          if case_id == "exec_func" do
+          if case_id in ["exec_func", "local_exec"] do
             {_value, engine_time} = result
             engine_time
           else
@@ -175,6 +180,8 @@ defmodule GiocciBench.Measure.Single do
     :ok = Giocci.register_client(relay_name, timeout: timeout_ms)
     :ok = Giocci.save_module(relay_name, module, timeout: timeout_ms)
   end
+
+  defp prepare_case("local_exec", _relay_name, _module, _timeout_ms), do: :ok
 
   defp fetch_option(opts, key, default) do
     case Keyword.fetch(opts, key) do
