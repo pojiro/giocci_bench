@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 giocci_bench-*.tar
 
+# Benchmark measurement output directory
+/giocci_bench_output/

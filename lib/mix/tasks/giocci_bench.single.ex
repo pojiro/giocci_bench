@@ -23,16 +23,17 @@ defmodule Mix.Tasks.GiocciBench.Single do
   def run(args) do
     Mix.Task.run("app.start")
 
-    {opts, _rest, _invalid} = OptionParser.parse(args,
-      switches: [
-        relay: :string,
-        warmup: :integer,
-        iterations: :integer,
-        timeout_ms: :integer,
-        out_dir: :string,
-        cases: :string
-      ]
-    )
+    {opts, _rest, _invalid} =
+      OptionParser.parse(args,
+        switches: [
+          relay: :string,
+          warmup: :integer,
+          iterations: :integer,
+          timeout_ms: :integer,
+          out_dir: :string,
+          cases: :string
+        ]
+      )
 
     relay_name = Keyword.get(opts, :relay)
     warmup = Keyword.get(opts, :warmup)

@@ -37,7 +37,10 @@ defmodule GiocciBench.Csv do
   defp normalize_value(value) when is_binary(value), do: clean_text(value)
   defp normalize_value(value) when is_boolean(value), do: to_string(value)
   defp normalize_value(value) when is_integer(value), do: Integer.to_string(value)
-  defp normalize_value(value) when is_float(value), do: :erlang.float_to_binary(value, decimals: 3)
+
+  defp normalize_value(value) when is_float(value),
+    do: :erlang.float_to_binary(value, decimals: 3)
+
   defp normalize_value(value), do: normalize_value(to_string(value))
 
   defp clean_text(value) do

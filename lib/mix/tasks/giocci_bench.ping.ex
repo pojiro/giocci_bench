@@ -21,9 +21,10 @@ defmodule Mix.Tasks.GiocciBench.Ping do
   def run(args) do
     ping_module = Application.get_env(:giocci_bench, :ping_module, Ping)
 
-    {opts, _rest, _invalid} = OptionParser.parse(args,
-      switches: [targets: :string, count: :integer, timeout_ms: :integer, out_dir: :string]
-    )
+    {opts, _rest, _invalid} =
+      OptionParser.parse(args,
+        switches: [targets: :string, count: :integer, timeout_ms: :integer, out_dir: :string]
+      )
 
     targets =
       opts

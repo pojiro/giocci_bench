@@ -12,9 +12,10 @@ defmodule GiocciBench.Samples.Sieve do
           acc
         else
           # num が素数なら、num の倍数をすべてマークする
-          num * num..limit//num
+          (num * num)..limit//num
           |> Enum.reduce(acc, fn multiple, a -> Map.put(a, multiple, true) end)
-          |> Map.put(num, false)  # num 自身は素数
+          # num 自身は素数
+          |> Map.put(num, false)
         end
       end
     )

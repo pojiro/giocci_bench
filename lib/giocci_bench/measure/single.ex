@@ -44,9 +44,12 @@ defmodule GiocciBench.Measure.Single do
     #   - case_desc: Giocciのメソッドシグネチャなど、ケース説明（文字列）。CSV出力に含まれる
     #   - fun: 実際に実行する無名関数。warmup_runs と measure_iterations で呼び出される
     cases = [
-      {"register_client", "Giocci.register_client/2", fn -> Giocci.register_client(relay_name, timeout: timeout_ms) end},
-      {"save_module", "Giocci.save_module/3", fn -> Giocci.save_module(relay_name, module, timeout: timeout_ms) end},
-      {"exec_func", "Giocci.exec_func/3", fn -> Giocci.exec_func(relay_name, mfargs, timeout: timeout_ms) end}
+      {"register_client", "Giocci.register_client/2",
+       fn -> Giocci.register_client(relay_name, timeout: timeout_ms) end},
+      {"save_module", "Giocci.save_module/3",
+       fn -> Giocci.save_module(relay_name, module, timeout: timeout_ms) end},
+      {"exec_func", "Giocci.exec_func/3",
+       fn -> Giocci.exec_func(relay_name, mfargs, timeout: timeout_ms) end}
     ]
 
     rows =
@@ -62,6 +65,7 @@ defmodule GiocciBench.Measure.Single do
     header = Enum.map(@columns, &Atom.to_string/1)
 
     Csv.write_csv!(path, header, rows)
+
     {:ok, path}
   end
 
@@ -205,6 +209,10 @@ defmodule GiocciBench.Measure.Single do
   end
 
   defp default_mfargs do
-    Application.get_env(:giocci_bench, :single_measure_mfargs, {GiocciBench.Samples.Add, :add, [1, 2]})
+    Application.get_env(
+      :giocci_bench,
+      :single_measure_mfargs,
+      {GiocciBench.Samples.Add, :add, [1, 2]}
+    )
   end
 end
