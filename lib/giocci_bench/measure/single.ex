@@ -82,7 +82,7 @@ defmodule GiocciBench.Measure.Single do
         IO.puts("[#{case_index}/#{total_cases}] #{case_display}")
         :ok = prepare_case(case_id, relay_name, module, timeout_ms)
         :ok = warmup_runs(warmup, fun)
-        measure_iterations(case_id, case_desc, iterations, fun, run_id, started_at, env)
+        measure_iterations(case_id, case_desc, iterations, fun, run_id, started_at, env, warmup)
       end)
 
     path = Path.join(out_dir, "single_#{run_id}.csv")
@@ -109,7 +109,16 @@ defmodule GiocciBench.Measure.Single do
 
   defp warmup_runs(_count, _fun), do: :ok
 
-  defp measure_iterations(case_id, case_desc, iterations, fun, run_id, started_at, env) do
+  defp measure_iterations(
+         case_id,
+         case_desc,
+         iterations,
+         fun,
+         run_id,
+         started_at,
+         env,
+         warmup_count
+       ) do
     IO.write("  Measuring: ")
 
     results =
@@ -132,7 +141,7 @@ defmodule GiocciBench.Measure.Single do
           iteration: iteration,
           elapsed_ms: elapsed_ms,
           engine_elapsed_ms: engine_elapsed_ms,
-          warmup: false,
+          warmup: warmup_count,
           elixir_version: env.elixir_version,
           otp_version: env.otp_version,
           os: env.os,
