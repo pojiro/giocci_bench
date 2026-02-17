@@ -8,6 +8,7 @@ defmodule GiocciBench.Measure.Single do
   @default_timeout_ms 5_000
   @default_out_dir "giocci_bench_output"
   @default_cases ["register_client", "save_module", "exec_func", "local_exec"]
+  @default_ping true
   @columns [
     :run_id,
     :case_id,
@@ -27,6 +28,9 @@ defmodule GiocciBench.Measure.Single do
     timeout_ms = fetch_option(opts, :timeout_ms, @default_timeout_ms)
     out_dir = fetch_option(opts, :out_dir, @default_out_dir)
     run_id = fetch_option(opts, :run_id, build_run_id())
+    ping = fetch_option(opts, :ping, @default_ping)
+    ping_targets = Keyword.get(opts, :ping_targets)
+    ping_count = Keyword.get(opts, :ping_count)
 
     started_at = DateTime.utc_now() |> DateTime.to_iso8601()
     env = env_info()
@@ -55,6 +59,29 @@ defmodule GiocciBench.Measure.Single do
       cases
       |> Enum.filter(fn {case_id, _case_desc, _fun} -> case_id in selected_cases end)
 
+    # セッションディレクトリを作成
+    session_dir = Path.join(out_dir, "session_#{run_id}")
+    File.mkdir_p!(session_dir)
+
+    # メタデータを JSON に出力
+    metadata = %{
+      "run_id" => run_id,
+      "started_at" => started_at,
+      "elixir_version" => env.elixir_version,
+      "otp_version" => env.otp_version,
+      "os" => env.os,
+      "cpu" => env.cpu,
+      "cpu_cores" => env.cpu_cores
+    }
+
+    meta_path = Path.join(session_dir, "meta.json")
+    Output.write_metadata_json!(meta_path, metadata)
+
+    # ping が有効な場合、計測前に ping を実行
+    if ping do
+      :ok = run_ping_to_session(session_dir, run_id, ping_targets, ping_count)
+    end
+
     total_cases = Enum.count(filtered_cases)
     IO.puts("\n[Single Measurement] Cases to measure: #{total_cases}")
     IO.puts("Warmup iterations: #{warmup}, Measurement iterations: #{iterations}\n")
@@ -78,30 +105,32 @@ defmodule GiocciBench.Measure.Single do
         measure_iterations(case_id, case_desc, iterations, fun, run_id, warmup)
       end)
 
-    # セッションディレクトリを作成
-    session_dir = Path.join(out_dir, "session_#{run_id}")
-    File.mkdir_p!(session_dir)
-
     # 計測結果を CSV に出力
     csv_path = Path.join(session_dir, "single.csv")
     header = Enum.map(@columns, &Atom.to_string/1)
     Output.write_csv!(csv_path, header, rows)
 
-    # メタデータを JSON に出力
-    metadata = %{
-      "run_id" => run_id,
-      "started_at" => started_at,
-      "elixir_version" => env.elixir_version,
-      "otp_version" => env.otp_version,
-      "os" => env.os,
-      "cpu" => env.cpu,
-      "cpu_cores" => env.cpu_cores
-    }
-
-    meta_path = Path.join(session_dir, "meta.json")
-    Output.write_metadata_json!(meta_path, metadata)
-
     {:ok, session_dir}
+  end
+
+  defp run_ping_to_session(session_dir, run_id, ping_targets, ping_count) do
+    alias GiocciBench.Ping
+
+    ping_opts = [run_id: run_id, session_dir: session_dir]
+
+    ping_opts =
+      if ping_targets, do: Keyword.put(ping_opts, :targets, ping_targets), else: ping_opts
+
+    ping_opts = if ping_count, do: Keyword.put(ping_opts, :count, ping_count), else: ping_opts
+
+    # ping を実行して結果を取得
+    with {:ok, _ping_session_dir} <- Ping.run(ping_opts) do
+      :ok
+    else
+      {:error, reason} ->
+        IO.warn("ping measurement failed: #{inspect(reason)}")
+        :ok
+    end
   end
 
   # warmup: JIT コンパイルやキャッシュの初期化など、最初の実行による異常値を避けるため

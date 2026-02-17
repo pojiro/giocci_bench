@@ -11,27 +11,42 @@ defmodule GiocciBench.Ping do
 
   def run(opts \\ []) do
     cmd_fun = Keyword.get(opts, :cmd_fun, &System.cmd/3)
+    silent = Keyword.get(opts, :silent, false)
 
     with {:ok, ping_path} <- fetch_ping_path(opts),
          {:ok, targets} <- validate_targets(Keyword.get(opts, :targets, @default_targets)) do
       count = Keyword.get(opts, :count, @default_count)
       timeout_ms = Keyword.get(opts, :timeout_ms, @default_timeout_ms)
-      out_dir = Keyword.get(opts, :out_dir, @default_out_dir)
       run_id = Keyword.get(opts, :run_id, build_run_id())
+
+      if not silent do
+        IO.puts("[Ping] Targets: #{Enum.join(targets, ", ")}, Count: #{count}")
+      end
 
       started_at = DateTime.utc_now() |> DateTime.to_iso8601()
       rows = build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id, started_at)
 
-      # セッションディレクトリを作成
-      session_dir = Path.join(out_dir, "session_#{run_id}")
-      File.mkdir_p!(session_dir)
+      # セッションディレクトリを決定
+      # session_dir が指定されている場合はそれを使用、
+      # 指定されていない場合は out_dir から新規作成
+      actual_session_dir =
+        case Keyword.get(opts, :session_dir) do
+          nil ->
+            out_dir = Keyword.get(opts, :out_dir, @default_out_dir)
+            session_dir = Path.join(out_dir, "session_#{run_id}")
+            File.mkdir_p!(session_dir)
+            session_dir
+
+          session_dir ->
+            session_dir
+        end
 
       # ping の計測結果を CSV に出力
-      csv_path = Path.join(session_dir, "ping.csv")
+      csv_path = Path.join(actual_session_dir, "ping.csv")
       header = header()
 
       Output.write_csv!(csv_path, header, rows)
-      {:ok, session_dir}
+      {:ok, actual_session_dir}
     end
   end
 

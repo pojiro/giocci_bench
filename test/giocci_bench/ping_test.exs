@@ -14,7 +14,8 @@ defmodule GiocciBench.PingTest do
         targets: ["127.0.0.1"],
         count: 2,
         out_dir: tmp_dir,
-        run_id: "test_run"
+        run_id: "test_run",
+        silent: true
       )
 
     content = File.read!(Path.join(session_dir, "ping.csv"))
@@ -52,7 +53,8 @@ defmodule GiocciBench.PingTest do
                ping_path: "/bin/ping",
                cmd_fun: cmd_fun,
                targets: ["localhost"],
-               out_dir: System.tmp_dir!()
+               out_dir: System.tmp_dir!(),
+               silent: true
              )
   end
 
@@ -67,7 +69,8 @@ defmodule GiocciBench.PingTest do
         targets: ["127.0.0.1"],
         count: 1,
         out_dir: tmp_dir,
-        run_id: "error_run"
+        run_id: "error_run",
+        silent: true
       )
 
     content = File.read!(Path.join(session_dir, "ping.csv"))
@@ -100,7 +103,8 @@ defmodule GiocciBench.PingTest do
           targets: ["127.0.0.1"],
           count: 1,
           out_dir: tmp_dir,
-          run_id: "real_ping"
+          run_id: "real_ping",
+          silent: true
         )
 
       content = File.read!(Path.join(session_dir, "ping.csv"))
@@ -132,7 +136,8 @@ defmodule GiocciBench.PingTest do
           count: 1,
           timeout_ms: 200,
           out_dir: tmp_dir,
-          run_id: "real_ping_fail"
+          run_id: "real_ping_fail",
+          silent: true
         )
 
       content = File.read!(Path.join(session_dir, "ping.csv"))
