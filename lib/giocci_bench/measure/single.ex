@@ -37,8 +37,7 @@ defmodule GiocciBench.Measure.Single do
     selected_cases = normalize_cases(fetch_option(opts, :cases, @default_cases))
 
     # local_exec の case_desc を動的に生成
-    local_exec_desc =
-      "#{Module.split(module) |> Enum.join(".")}.#{func}/#{length(args)}"
+    local_exec_desc = "#{Module.split(module) |> Enum.join(".")}.#{func}/#{length(args)}"
 
     # ベンチマーク対象の3つのケースを定義
     # 各要素は {case_id, case_desc, fun} のタプル：
@@ -86,29 +85,29 @@ defmodule GiocciBench.Measure.Single do
     IO.puts("\n[Single Measurement] Cases to measure: #{total_cases}")
     IO.puts("Warmup iterations: #{warmup}, Measurement iterations: #{iterations}\n")
 
-    rows =
-      filtered_cases
-      |> Enum.with_index(1)
-      |> Enum.flat_map(fn {{case_id, case_desc, fun}, case_index} ->
-        case_display =
-          if case_id in ["exec_func", "local_exec"] do
-            {module, func, args} = mfargs
-
-            "#{case_desc} (module: #{inspect(module)}, func: #{inspect(func)}, args: #{inspect(args)})"
-          else
-            case_desc
-          end
-
-        IO.puts("[#{case_index}/#{total_cases}] #{case_display}")
-        :ok = prepare_case(case_id, relay_name, module, timeout_ms)
-        :ok = warmup_runs(warmup, fun)
-        measure_iterations(case_id, case_desc, iterations, fun, run_id, warmup)
-      end)
-
-    # 計測結果を CSV に出力
-    csv_path = Path.join(session_dir, "single.csv")
     header = Enum.map(@columns, &Atom.to_string/1)
-    Output.write_csv!(csv_path, header, rows)
+
+    filtered_cases
+    |> Enum.with_index(1)
+    |> Enum.each(fn {{case_id, case_desc, fun}, case_index} ->
+      case_display =
+        if case_id in ["exec_func", "local_exec"] do
+          {module, func, args} = mfargs
+
+          "#{case_desc} (module: #{inspect(module)}, func: #{inspect(func)}, args: #{inspect(args)})"
+        else
+          case_desc
+        end
+
+      IO.puts("[#{case_index}/#{total_cases}] #{case_display}")
+      :ok = prepare_case(case_id, relay_name, module, timeout_ms)
+      :ok = warmup_runs(warmup, fun)
+      rows = measure_iterations(case_id, case_desc, iterations, fun, run_id, warmup)
+
+      # 各 case_id ごとに CSV ファイルに出力
+      csv_path = Path.join(session_dir, "#{case_id}.csv")
+      Output.write_csv!(csv_path, header, rows)
+    end)
 
     {:ok, session_dir}
   end
