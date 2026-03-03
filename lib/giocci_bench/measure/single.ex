@@ -1,5 +1,26 @@
 defmodule GiocciBench.Measure.Single do
-  @moduledoc false
+  @moduledoc """
+  Giocci の単体計測（Single Measurement）を実行するモジュール。
+
+  各 giocci 関数（`register_client`, `save_module`, `exec_func`）および
+  比較用の `local_exec` を個別に計測し、処理時間と通信時間を CSV に記録します。
+
+  複合計測（複数の関数を連続実行）とは異なり、各関数を独立して計測します。
+
+  ## 計測項目
+  - `register_client` - クライアント登録
+  - `save_module` - モジュール保存
+  - `exec_func` - リモート関数実行
+  - `local_exec` - ローカル関数実行（比較用）
+
+  ## オプション
+  - `:warmup` - ウォームアップ回数（デフォルト: 1）
+  - `:iterations` - 計測回数（デフォルト: 5）
+  - `:include_timestamps` - タイムスタンプ列を出力（デフォルト: false）
+  - `:os_info` - OS 情報を計測（デフォルト: false）
+
+  詳細は `mix help giocci_bench.single` を参照してください。
+  """
 
   alias GiocciBench.Output
 
