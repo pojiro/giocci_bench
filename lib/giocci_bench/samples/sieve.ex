@@ -1,7 +1,7 @@
 defmodule GiocciBench.Samples.Sieve do
   @moduledoc "Sieve of Eratosthenes (CPU-intensive benchmark)"
 
-  @behaviour GiocciBench.Samples.Benchmark
+  @behaviour GiocciBench.Samples.BenchmarkBehaviour
 
   # Sieve of Eratosthenes: CPU 負荷のかかった計算処理
   # 指定された上限までの素数をふるいで求める

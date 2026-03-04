@@ -1,4 +1,4 @@
-defmodule GiocciBench.Samples.Benchmark do
+defmodule GiocciBench.Samples.BenchmarkBehaviour do
   @moduledoc "Behaviour for benchmark sample modules"
 
   @doc """

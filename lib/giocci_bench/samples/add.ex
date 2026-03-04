@@ -1,7 +1,7 @@
 defmodule GiocciBench.Samples.Add do
   @moduledoc "Simple arithmetic addition (lightweight benchmark)"
 
-  @behaviour GiocciBench.Samples.Benchmark
+  @behaviour GiocciBench.Samples.BenchmarkBehaviour
 
   @spec run(list()) :: {integer(), float()}
   @impl true
