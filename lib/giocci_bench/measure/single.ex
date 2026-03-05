@@ -131,8 +131,8 @@ defmodule GiocciBench.Measure.Single do
       "started_at" => started_at,
       "elixir_version" => env.elixir_version,
       "otp_version" => env.otp_version,
-      "os" => env.os,
-      "cpu" => env.cpu,
+      "os_type" => env.os_type,
+      "system_arch" => env.system_arch,
       "cpu_cores" => env.cpu_cores,
       "cases" => cases_mapping
     }
@@ -362,18 +362,18 @@ defmodule GiocciBench.Measure.Single do
     %{
       elixir_version: System.version(),
       otp_version: System.otp_release(),
-      os: os_string(),
-      cpu: cpu_arch(),
+      os_type: os_type(),
+      system_arch: system_arch(),
       cpu_cores: cpu_cores()
     }
   end
 
-  defp os_string do
+  defp os_type do
     {family, name} = :os.type()
     "#{family}-#{name}"
   end
 
-  defp cpu_arch do
+  defp system_arch do
     :erlang.system_info(:system_architecture)
     |> List.to_string()
   end

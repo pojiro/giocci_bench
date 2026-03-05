@@ -7,7 +7,7 @@ defmodule GiocciBench.Ping do
   @default_count 5
   @default_timeout_ms 1000
   @default_out_dir "giocci_bench_output"
-  @columns [:run_id, :target, :iteration, :elapsed_ms, :success, :error, :started_at]
+  @columns [:run_id, :target, :iteration, :elapsed_ms, :success, :error]
 
   def run(opts \\ []) do
     cmd_fun = Keyword.get(opts, :cmd_fun, &System.cmd/3)
@@ -23,8 +23,7 @@ defmodule GiocciBench.Ping do
         IO.puts("[Ping] Targets: #{Enum.join(targets, ", ")}, Count: #{count}")
       end
 
-      started_at = DateTime.utc_now() |> DateTime.to_iso8601()
-      rows = build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id, started_at)
+      rows = build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id)
 
       # セッションディレクトリを決定
       # session_dir が指定されている場合はそれを使用、
@@ -50,10 +49,10 @@ defmodule GiocciBench.Ping do
     end
   end
 
-  defp build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id, started_at) do
+  defp build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id) do
     for target <- targets, iteration <- 1..count do
       {elapsed_ms, success, error} = ping_once(ping_path, cmd_fun, target, timeout_ms)
-      build_row(run_id, target, iteration, elapsed_ms, success, error, started_at)
+      build_row(run_id, target, iteration, elapsed_ms, success, error)
     end
   end
 
@@ -61,15 +60,14 @@ defmodule GiocciBench.Ping do
     Enum.map(@columns, &Atom.to_string/1)
   end
 
-  defp build_row(run_id, target, iteration, elapsed_ms, success, error, started_at) do
+  defp build_row(run_id, target, iteration, elapsed_ms, success, error) do
     values = %{
       run_id: run_id,
       target: target,
       iteration: iteration,
       elapsed_ms: elapsed_ms,
       success: success,
-      error: error,
-      started_at: started_at
+      error: error
     }
 
     Enum.map(@columns, &Map.fetch!(values, &1))
