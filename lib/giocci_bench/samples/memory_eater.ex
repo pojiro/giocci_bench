@@ -1,7 +1,21 @@
-defmodule GiocciBench.Samples.MemoryEeater do
+defmodule GiocciBench.Samples.MemoryEater do
+  @moduledoc """
+  メモリ負荷テスト用のベンチマークモジュール。
+
+  実行中に一時的に大量のメモリを確保し、メモリ使用量を増加させます。
+  `--os-info` オプションと併用することで、メモリ使用量の変化を計測できます。
+
+  ## 動作
+
+  - 指定されたサイズ（デフォルト: 1000 MiB）のメモリをチャンク単位で確保
+  - 確保したメモリはリストに保持され、関数終了まで解放されない
+  - 外部計測ツールでメモリ使用量の増加を観察可能
+
+  """
+
   @behaviour GiocciBench.Samples.BenchmarkBehaviour
 
-  @spec run(list()) :: {:ok, float()}
+  @spec run(list()) :: {any(), float()}
   @impl true
   def run([]) do
     start_time = System.monotonic_time()

@@ -1,7 +1,21 @@
-defmodule GiocciBench.Samples.CpuEeater do
+defmodule GiocciBench.Samples.CpuEater do
+  @moduledoc """
+  CPU 負荷テスト用のベンチマークモジュール。
+
+  全CPUコアでスピンループを実行し、CPU使用率を高めます。
+  `--os-info` オプションと併用することで、CPU使用率の変化を計測できます。
+
+  ## 動作
+
+  - システムの論理プロセッサ数を取得
+  - 各コアごとにプロセスを生成してスピンループを実行
+  - LCG（線形合同法）アルゴリズムでCPUを継続的に使用
+
+  """
+
   @behaviour GiocciBench.Samples.BenchmarkBehaviour
 
-  @spec run(list()) :: {:ok, float()}
+  @spec run(list()) :: {any(), float()}
   @impl true
   def run([]) do
     start_time = System.monotonic_time()
