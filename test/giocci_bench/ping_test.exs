@@ -21,7 +21,7 @@ defmodule GiocciBench.PingTest do
     content = File.read!(Path.join(session_dir, "ping.csv"))
     [header_line | data_lines] = String.split(content, "\r\n", trim: true)
 
-    assert header_line == "run_id,target,iteration,elapsed_ms,success,error,started_at"
+    assert header_line == "run_id,target,iteration,elapsed_ms,success,error"
     assert length(data_lines) == 2
 
     rows =
@@ -40,7 +40,6 @@ defmodule GiocciBench.PingTest do
     assert row1_map["iteration"] == "1"
     assert row1_map["success"] == "true"
     assert row1_map["error"] == ""
-    assert row1_map["started_at"] != ""
     assert row1_map["elapsed_ms"] == "12.000"
     assert row2_map["iteration"] == "2"
   end
@@ -110,7 +109,7 @@ defmodule GiocciBench.PingTest do
       content = File.read!(Path.join(session_dir, "ping.csv"))
       [header_line | data_lines] = String.split(content, "\r\n", trim: true)
 
-      assert header_line == "run_id,target,iteration,elapsed_ms,success,error,started_at"
+      assert header_line == "run_id,target,iteration,elapsed_ms,success,error"
       assert length(data_lines) == 1
 
       [row] =
