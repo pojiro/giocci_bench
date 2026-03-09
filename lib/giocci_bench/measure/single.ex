@@ -39,7 +39,7 @@ defmodule GiocciBench.Measure.Single do
     :case_id,
     :iteration,
     :elapsed_ms,
-    :engine_elapsed_ms,
+    :function_elapsed_ms,
     :warmup
   ]
 
@@ -250,11 +250,11 @@ defmodule GiocciBench.Measure.Single do
             %{}
           end
 
-        # exec_func と local_exec の場合のみ engine_elapsed_ms を取得
-        engine_elapsed_ms =
+        # exec_func と local_exec の場合のみ function_elapsed_ms を取得
+        function_elapsed_ms =
           if case_id in ["exec_func", "local_exec"] do
-            {_value, engine_time} = result
-            engine_time
+            {_value, function_time} = result
+            function_time
           else
             nil
           end
@@ -265,7 +265,7 @@ defmodule GiocciBench.Measure.Single do
             case_id: case_id,
             iteration: iteration,
             elapsed_ms: elapsed_ms,
-            engine_elapsed_ms: engine_elapsed_ms,
+            function_elapsed_ms: function_elapsed_ms,
             warmup: warmup_count
           }
           |> Map.merge(measurements)
