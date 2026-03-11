@@ -12,4 +12,5 @@ config :giocci_bench,
   # you must wrap it: [[arg1, arg2, ...]] not [arg1, arg2, ...]
   # Example: For Sieve.run([1_000_000]), use [[1_000_000]]
   #          For Add.run([1, 2]), use [[1, 2]]
-  single_measure_mfargs: {GiocciBench.Samples.Sieve, :run, [[1_000_000]]}
+  single_measure_mfargs: {GiocciBench.Samples.Sieve, :run, [[1_000_000]]},
+  sequence_measure_mfargs: {GiocciBench.Samples.Sieve, :run, [[1_000_000]]}
