@@ -283,3 +283,34 @@ mix giocci_bench.sequence --iterations 10
 - `--ping-targets` - ping ターゲット（カンマ区切り）（デフォルト: 127.0.0.1）
 - `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
+
+## 可視化
+
+本機能はGitHub Copilotで実装されています（？？
+
+```bash
+# 最新セッションの CSV をグラフ化して report.html を生成
+mix giocci_bench.visualize
+
+# セッションを指定してグラフ化
+mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137
+
+# 出力先を指定
+mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137 --output tmp/bench_report.html
+
+# report.html を生成してブラウザで開く
+mix giocci_bench.visualize --open
+```
+
+- `--out-dir` - `session_*` を含む出力ディレクトリ（デフォルト: giocci_bench_output）
+- `--session-dir` - 可視化対象のセッションディレクトリを明示指定
+- `--output` - 生成する HTML レポートの出力パス（デフォルト: `<session_dir>/report.html`）
+- `--open` - 生成後に既定ブラウザで HTML を開く
+
+`mix giocci_bench.visualize` はセッション内の以下の CSV を自動検出して可視化します。
+
+- 単体/シーケンス計測 CSV（`register_client.csv`, `save_module.csv`, `exec_func.csv`, `local_exec.csv`, `sequence.csv`）
+- ping 計測 CSV（`ping.csv`）
+- OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）
+
+レポートには折れ線グラフと、各列の基本統計（count, mean, median, min, max, stddev）が含まれます。
