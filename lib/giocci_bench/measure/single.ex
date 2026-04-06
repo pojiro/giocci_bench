@@ -2,8 +2,8 @@ defmodule GiocciBench.Measure.Single do
   @moduledoc """
   Giocci の単体計測（Single Measurement）を実行するモジュール。
 
-  各 giocci 関数（`register_client`, `save_module`, `exec_func`）および
-  比較用の `local_exec` を個別に計測し、処理時間と通信時間を CSV に記録します。
+  各 giocci 関数（`register_client`, `save_module`, `exec_func`）を
+  個別に計測し、処理時間と通信時間を CSV に記録します。
 
   複合計測（複数の関数を連続実行）とは異なり、各関数を独立して計測します。
 
@@ -11,7 +11,7 @@ defmodule GiocciBench.Measure.Single do
   - `register_client` - クライアント登録
   - `save_module` - モジュール保存
   - `exec_func` - リモート関数実行
-  - `local_exec` - ローカル関数実行（比較用）
+  - `local_exec` - ローカル関数実行（比較用、`mix giocci_bench.local` で実行）
 
   ## オプション
   - `:warmup` - ウォームアップ回数（デフォルト: 1）
@@ -28,7 +28,10 @@ defmodule GiocciBench.Measure.Single do
   @default_iterations 5
   @default_timeout_ms 5_000
   @default_out_dir "giocci_bench_output"
-  @default_cases ["register_client", "save_module", "exec_func", "local_exec"]
+  @single_cases ["register_client", "save_module", "exec_func"]
+  @local_case "local_exec"
+  @supported_cases @single_cases ++ [@local_case]
+  @default_cases @single_cases
   @default_ping true
   @default_include_timestamps false
   @default_os_info false
@@ -344,7 +347,7 @@ defmodule GiocciBench.Measure.Single do
 
   defp normalize_cases(cases) when is_list(cases) do
     normalized = Enum.map(cases, &to_string/1)
-    invalid = Enum.reject(normalized, &(&1 in @default_cases))
+    invalid = Enum.reject(normalized, &(&1 in @supported_cases))
 
     if invalid == [] do
       normalized
