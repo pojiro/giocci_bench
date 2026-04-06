@@ -1,0 +1,21 @@
+services:
+  giocci_bench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_NAME: ${LOCAL_USER:-dev}
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
+    image: giocci_bench:dev
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    init: true
+    environment:
+      GIOCCI_ZENOH_CONFIG: ${GIOCCI_ZENOH_CONFIG:-config/zenoh.json5}
+      ZENOHD_CONNECT_ENDPOINTS: ${ZENOHD_CONNECT_ENDPOINTS:-}
+    volumes:
+      - .:/workspace
+      - ./.mix:/home/${LOCAL_USER:-dev}/.mix
+      - ./.hex:/home/${LOCAL_USER:-dev}/.hex

@@ -1,0 +1,9 @@
+.git
+.elixir_ls
+_build
+deps
+tmp
+giocci_bench_output
+.mix
+.hex
+erl_crash.dump

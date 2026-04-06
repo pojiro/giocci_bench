@@ -335,3 +335,50 @@ mix giocci_bench.sequence --iterations 10
 - `--ping-targets` - ping ターゲット（カンマ区切り）（デフォルト: 127.0.0.1）
 - `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
+
+## Docker での実行
+
+このリポジトリには Docker Compose でそのまま使える開発用コンテナを用意しています。
+
+- ベースイメージ: `hexpm/elixir:1.19.5-erlang-28.3-ubuntu-noble-20251013`
+- 追加パッケージ: `chrony`, `iputils-ping`, `procps`, `git`, `build-essential`
+- リポジトリ全体を `/workspace` に bind mount
+- コンテナ内の実行ユーザはホストの `uid/gid` と名前をビルド時に合わせられる
+
+### ビルド
+
+```bash
+LOCAL_USER="$(id -un)" \
+LOCAL_UID="$(id -u)" \
+LOCAL_GID="$(id -g)" \
+docker compose build
+```
+
+> `LOCAL_USER` / `LOCAL_UID` / `LOCAL_GID` を省略した場合は `dev:1000:1000` で作成されます。
+
+### シェルに入る
+
+`docker compose run` で bash に入り、その中で `mix` コマンドを実行していく運用を想定しています。
+
+```bash
+LOCAL_USER="$(id -un)" \
+LOCAL_UID="$(id -u)" \
+LOCAL_GID="$(id -g)" \
+docker compose run --rm giocci_bench
+```
+
+以降はDockerコンテナ内での操作を示しています。
+
+```bash
+mix deps.get
+mix compile
+mix test
+mix giocci_bench.single
+mix giocci_bench.sequence
+```
+
+### 補足
+
+- `chrony` はイメージ内にインストールされますが、systemd を使わないためデーモンは自動起動しません。
+- Mix / Hex のホームディレクトリは Docker volume に保持されるため、コンテナを作り直してもキャッシュが残ります。
+- ベンチマーク結果は bind mount されたワークスペース側に出力されます。

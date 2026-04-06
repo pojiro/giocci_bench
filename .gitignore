@@ -22,5 +22,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 giocci_bench-*.tar
 
+# Docker helper directories for local container runs.
+/.mix/
+/.hex/
+
 # Benchmark measurement output directory
 /giocci_bench_output/
