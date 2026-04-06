@@ -12,8 +12,9 @@ defmodule Mix.Tasks.GiocciBench.Ping do
 
     * `--targets` - Comma-separated target IPs (default: 127.0.0.1)
     * `--count` - Number of pings per target (default: 5)
-    * `--timeout_ms` - Ping timeout in milliseconds (default: 1000)
-    * `--out_dir` - Output directory for CSV (default: giocci_bench_output)
+    * `--timeout-ms` - Ping timeout in milliseconds (default: 1000)
+    * `--out-dir` - Output directory for CSV (default: giocci_bench_output)
+    * `--title` - Title suffix for session directory
 
   """
 
@@ -23,7 +24,13 @@ defmodule Mix.Tasks.GiocciBench.Ping do
 
     {opts, _rest, _invalid} =
       OptionParser.parse(args,
-        switches: [targets: :string, count: :integer, timeout_ms: :integer, out_dir: :string]
+        switches: [
+          targets: :string,
+          count: :integer,
+          timeout_ms: :integer,
+          out_dir: :string,
+          title: :string
+        ]
       )
 
     targets =
@@ -34,8 +41,15 @@ defmodule Mix.Tasks.GiocciBench.Ping do
     count = Keyword.get(opts, :count, 5)
     timeout_ms = Keyword.get(opts, :timeout_ms, 1000)
     out_dir = Keyword.get(opts, :out_dir, "giocci_bench_output")
+    title = Keyword.get(opts, :title)
 
-    case ping_module.run(targets: targets, count: count, timeout_ms: timeout_ms, out_dir: out_dir) do
+    case ping_module.run(
+           targets: targets,
+           count: count,
+           timeout_ms: timeout_ms,
+           out_dir: out_dir,
+           title: title
+         ) do
       {:ok, session_dir} ->
         Mix.shell().info("ping measurement session created: #{session_dir}")
 

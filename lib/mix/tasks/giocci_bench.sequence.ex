@@ -15,6 +15,7 @@ defmodule Mix.Tasks.GiocciBench.Sequence do
     * `--iterations` - Measurement iterations per sequence (default: 5)
     * `--timeout-ms` - Giocci call timeout in milliseconds (default: 5000)
     * `--out-dir` - Output directory for CSV (default: giocci_bench_output)
+    * `--title` - Title suffix for session directory and metadata title
     * `--no-ping` - Disable ping measurement (default: enabled)
     * `--ping-targets` - Comma-separated ping targets (default: 127.0.0.1)
     * `--ping-count` - Number of pings per target (default: 5)
@@ -34,6 +35,7 @@ defmodule Mix.Tasks.GiocciBench.Sequence do
           iterations: :integer,
           timeout_ms: :integer,
           out_dir: :string,
+          title: :string,
           ping: :boolean,
           ping_targets: :string,
           ping_count: :integer,
@@ -46,6 +48,7 @@ defmodule Mix.Tasks.GiocciBench.Sequence do
     iterations = Keyword.get(opts, :iterations)
     timeout_ms = Keyword.get(opts, :timeout_ms)
     out_dir = Keyword.get(opts, :out_dir)
+    title = Keyword.get(opts, :title)
     ping = Keyword.get(opts, :ping, true)
     ping_targets = parse_ping_targets(Keyword.get(opts, :ping_targets))
     ping_count = Keyword.get(opts, :ping_count)
@@ -58,6 +61,7 @@ defmodule Mix.Tasks.GiocciBench.Sequence do
         iterations: iterations,
         timeout_ms: timeout_ms,
         out_dir: out_dir,
+        title: title,
         ping: ping,
         ping_targets: ping_targets,
         ping_count: ping_count,
