@@ -60,7 +60,9 @@ defmodule Mix.Tasks.GiocciBench.PingTest do
       "--timeout-ms",
       "200",
       "--out-dir",
-      "tmp_dir"
+      "tmp_dir",
+      "--title",
+      "nightly"
     ])
 
     assert_receive {:ping_opts, opts}
@@ -69,6 +71,7 @@ defmodule Mix.Tasks.GiocciBench.PingTest do
     assert opts[:count] == 2
     assert opts[:timeout_ms] == 200
     assert opts[:out_dir] == "tmp_dir"
+    assert opts[:title] == "nightly"
   end
 
   test "raises on invalid targets" do

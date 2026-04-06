@@ -75,6 +75,7 @@ defmodule GiocciBench.Measure.Single do
     timeout_ms = fetch_option(opts, :timeout_ms, @default_timeout_ms)
     out_dir = fetch_option(opts, :out_dir, @default_out_dir)
     run_id = fetch_option(opts, :run_id, build_run_id())
+    title = normalize_title(Keyword.get(opts, :title))
     ping = fetch_option(opts, :ping, @default_ping)
     ping_targets = Keyword.get(opts, :ping_targets)
     ping_count = Keyword.get(opts, :ping_count)
@@ -101,7 +102,7 @@ defmodule GiocciBench.Measure.Single do
     filtered_cases = Enum.filter(cases, fn {case_id, _mfargs} -> case_id in selected_cases end)
 
     # セッションディレクトリを作成
-    session_dir = Path.join(out_dir, "session_#{run_id}")
+    session_dir = Path.join(out_dir, build_session_dir_name(run_id, title))
     File.mkdir_p!(session_dir)
 
     # case_id → mfargs のマップを作成
@@ -111,16 +112,18 @@ defmodule GiocciBench.Measure.Single do
       |> Map.new()
 
     # メタデータを JSON に出力
-    metadata = %{
-      "run_id" => run_id,
-      "started_at" => started_at,
-      "elixir_version" => env.elixir_version,
-      "otp_version" => env.otp_version,
-      "os_type" => env.os_type,
-      "system_arch" => env.system_arch,
-      "cpu_cores" => env.cpu_cores,
-      "cases" => cases_mapping
-    }
+    metadata =
+      %{
+        "run_id" => run_id,
+        "started_at" => started_at,
+        "elixir_version" => env.elixir_version,
+        "otp_version" => env.otp_version,
+        "os_type" => env.os_type,
+        "system_arch" => env.system_arch,
+        "cpu_cores" => env.cpu_cores,
+        "cases" => cases_mapping
+      }
+      |> maybe_put_title(title)
 
     meta_path = Path.join(session_dir, "meta.json")
     Output.write_metadata_json!(meta_path, metadata)
@@ -393,6 +396,27 @@ defmodule GiocciBench.Measure.Single do
   defp build_run_id do
     DateTime.utc_now()
     |> Calendar.strftime("%Y%m%d-%H%M%S")
+  end
+
+  defp maybe_put_title(metadata, nil), do: metadata
+  defp maybe_put_title(metadata, title), do: Map.put(metadata, "title", title)
+
+  defp build_session_dir_name(run_id, nil), do: "session_#{run_id}"
+  defp build_session_dir_name(run_id, title), do: "session_#{run_id}_#{sanitize_title(title)}"
+
+  defp normalize_title(nil), do: nil
+
+  defp normalize_title(title) when is_binary(title) do
+    case String.trim(title) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp sanitize_title(title) do
+    title
+    |> String.replace(~r{[\\/]+}, "_")
+    |> String.trim()
   end
 
   defp default_relay do

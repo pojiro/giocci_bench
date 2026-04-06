@@ -44,6 +44,25 @@ defmodule GiocciBench.PingTest do
     assert row2_map["iteration"] == "2"
   end
 
+  @tag :tmp_dir
+  test "appends title suffix to session directory", %{tmp_dir: tmp_dir} do
+    cmd_fun = fn _cmd, _args, _opts -> {"64 bytes from 127.0.0.1: time=12.0 ms\n", 0} end
+
+    {:ok, session_dir} =
+      Ping.run(
+        ping_path: "/bin/ping",
+        cmd_fun: cmd_fun,
+        targets: ["127.0.0.1"],
+        count: 1,
+        out_dir: tmp_dir,
+        run_id: "test_run",
+        title: "nightly run",
+        silent: true
+      )
+
+    assert Path.basename(session_dir) == "session_test_run_nightly run"
+  end
+
   test "rejects non-ip targets" do
     cmd_fun = fn _cmd, _args, _opts -> {"ok", 0} end
 

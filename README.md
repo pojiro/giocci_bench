@@ -96,6 +96,7 @@ giocci_bench_output/
 
 - 出力先ディレクトリのデフォルトは `giocci_bench_output`
 - `session_<run_id>` ディレクトリ名は実行開始時刻（UTC）を `YYYYMMDD-HHMMSS` 形式にしたもの
+- `--title` 指定時は `session_<run_id>_<title>` 形式になり、`/` と `\` は `_` に置換
 - 単体計測結果は `case_id` ごとに別ファイルに分割（例: `register_client.csv`, `save_module.csv`）
 - シーケンス計測結果は `sequence.csv` に出力
 - `--os-info` 指定時は実行モードに応じた OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）を同じディレクトリに保存
@@ -107,6 +108,7 @@ giocci_bench_output/
 - `cases` には各ケースの実行時の `{module, function, args}` を `inspect/1` で文字列化した値が記録されます。
 - giocci のケースは引数末尾のオプション（`timeout` と `measure_to`）も含まれます。
 - 単体計測では `measure_to` は meta.json では `nil` で記録されますが、実行時には計測用 PID が注入されます。
+- `--title` 指定時は `title` フィールドが meta.json に追加されます。
 
 ```json
 {
@@ -303,6 +305,9 @@ mix giocci_bench.single --ping-targets "127.0.0.1,8.8.8.8" --ping-count 3 --iter
 # 特定のケースのみ計測
 mix giocci_bench.single --cases "register_client,save_module"
 
+# セッションタイトルを付けて実行（出力ディレクトリ名と meta.json に反映）
+mix giocci_bench.single --title "nightly"
+
 # ローカル比較計測（local_exec のみ）
 mix giocci_bench.local
 
@@ -337,6 +342,7 @@ mix giocci_bench.sequence --iterations 10
 - `--iterations` - ケースごとの計測回数（デフォルト: 5）
 - `--timeout-ms` - Giocci 呼び出しのタイムアウト (ミリ秒)（デフォルト: 5000）
 - `--out-dir` - CSV 出力ディレクトリ（デフォルト: giocci_bench_output）
+- `--title` - セッションタイトル（出力ディレクトリ名末尾と meta.json の `title` に反映）
 - `--cases` - 計測するケース（カンマ区切り: register_client, save_module, exec_func）
 - `--no-ping` - ping 計測を無効化（デフォルト: 有効）
 - `--ping-targets` - ping ターゲット（カンマ区切り）（デフォルト: 127.0.0.1）
@@ -349,6 +355,7 @@ mix giocci_bench.sequence --iterations 10
 - `--warmup` - ケースごとのウォームアップ回数（デフォルト: 1）
 - `--iterations` - ケースごとの計測回数（デフォルト: 5）
 - `--out-dir` - CSV 出力ディレクトリ（デフォルト: giocci_bench_output）
+- `--title` - セッションタイトル（出力ディレクトリ名末尾と meta.json の `title` に反映）
 - `--include-timestamps` - 計算元タイムスタンプ列をCSVに含める（デフォルト: 無効）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
 
@@ -359,6 +366,7 @@ mix giocci_bench.sequence --iterations 10
 - `--iterations` - シナリオの計測回数（デフォルト: 5）
 - `--timeout-ms` - Giocci 呼び出しのタイムアウト (ミリ秒)（デフォルト: 5000）
 - `--out-dir` - CSV 出力ディレクトリ（デフォルト: giocci_bench_output）
+- `--title` - セッションタイトル（出力ディレクトリ名末尾と meta.json の `title` に反映）
 - `--no-ping` - ping 計測を無効化（デフォルト: 有効）
 - `--ping-targets` - ping ターゲット（カンマ区切り）（デフォルト: 127.0.0.1）
 - `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）

@@ -24,6 +24,7 @@ defmodule GiocciBench.Ping do
       end
 
       rows = build_rows(ping_path, cmd_fun, targets, count, timeout_ms, run_id)
+      title = normalize_title(Keyword.get(opts, :title))
 
       # セッションディレクトリを決定
       # session_dir が指定されている場合はそれを使用、
@@ -32,7 +33,7 @@ defmodule GiocciBench.Ping do
         case Keyword.get(opts, :session_dir) do
           nil ->
             out_dir = Keyword.get(opts, :out_dir, @default_out_dir)
-            session_dir = Path.join(out_dir, "session_#{run_id}")
+            session_dir = Path.join(out_dir, build_session_dir_name(run_id, title))
             File.mkdir_p!(session_dir)
             session_dir
 
@@ -149,5 +150,23 @@ defmodule GiocciBench.Ping do
   defp build_run_id do
     DateTime.utc_now()
     |> Calendar.strftime("%Y%m%d-%H%M%S")
+  end
+
+  defp build_session_dir_name(run_id, nil), do: "session_#{run_id}"
+  defp build_session_dir_name(run_id, title), do: "session_#{run_id}_#{sanitize_title(title)}"
+
+  defp normalize_title(nil), do: nil
+
+  defp normalize_title(title) when is_binary(title) do
+    case String.trim(title) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp sanitize_title(title) do
+    title
+    |> String.replace(~r{[\\/]+}, "_")
+    |> String.trim()
   end
 end
