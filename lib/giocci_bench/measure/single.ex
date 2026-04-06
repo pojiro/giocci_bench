@@ -11,7 +11,6 @@ defmodule GiocciBench.Measure.Single do
   - `register_client` - クライアント登録
   - `save_module` - モジュール保存
   - `exec_func` - リモート関数実行
-  - `local_exec` - ローカル関数実行（比較用、`mix giocci_bench.local` で実行）
 
   ## オプション
   - `:warmup` - ウォームアップ回数（デフォルト: 1）
@@ -28,10 +27,7 @@ defmodule GiocciBench.Measure.Single do
   @default_iterations 5
   @default_timeout_ms 5_000
   @default_out_dir "giocci_bench_output"
-  @single_cases ["register_client", "save_module", "exec_func"]
-  @local_case "local_exec"
-  @supported_cases @single_cases ++ [@local_case]
-  @default_cases @single_cases
+  @default_cases ["register_client", "save_module", "exec_func"]
   @default_ping true
   @default_include_timestamps false
   @default_os_info false
@@ -73,7 +69,7 @@ defmodule GiocciBench.Measure.Single do
   def run(opts \\ []) do
     relay_name = fetch_option(opts, :relay_name, default_relay())
     mfargs = fetch_option(opts, :mfargs, default_mfargs())
-    {module, func, args} = mfargs
+    {module, _func, _args} = mfargs
     warmup = fetch_option(opts, :warmup, @default_warmup)
     iterations = fetch_option(opts, :iterations, @default_iterations)
     timeout_ms = fetch_option(opts, :timeout_ms, @default_timeout_ms)
@@ -99,8 +95,7 @@ defmodule GiocciBench.Measure.Single do
       {"save_module",
        {Giocci, :save_module, [relay_name, module, [timeout: timeout_ms, measure_to: nil]]}},
       {"exec_func",
-       {Giocci, :exec_func, [relay_name, mfargs, [timeout: timeout_ms, measure_to: nil]]}},
-      {"local_exec", {module, func, args}}
+       {Giocci, :exec_func, [relay_name, mfargs, [timeout: timeout_ms, measure_to: nil]]}}
     ]
 
     filtered_cases = Enum.filter(cases, fn {case_id, _mfargs} -> case_id in selected_cases end)
@@ -216,7 +211,7 @@ defmodule GiocciBench.Measure.Single do
        ) do
     IO.write("  Measuring: ")
 
-    measure_to = if case_id == "local_exec", do: nil, else: self()
+    measure_to = self()
     mfargs = ensure_measure_to(mfargs, measure_to)
 
     results =
@@ -225,19 +220,15 @@ defmodule GiocciBench.Measure.Single do
 
         # giocci から測定値を受信
         measurements =
-          if measure_to do
-            receive do
-              {:giocci_measurements, m} -> m
-            after
-              1000 -> %{}
-            end
-          else
-            %{}
+          receive do
+            {:giocci_measurements, m} -> m
+          after
+            1000 -> %{}
           end
 
-        # exec_func と local_exec の場合のみ function_elapsed_ms を取得
+        # exec_func の場合のみ function_elapsed_ms を取得
         function_elapsed_ms =
-          if case_id in ["exec_func", "local_exec"] do
+          if case_id == "exec_func" do
             {_value, function_time} = result
             function_time
           else
@@ -335,8 +326,6 @@ defmodule GiocciBench.Measure.Single do
     :ok = Giocci.save_module(relay_name, module, timeout: timeout_ms)
   end
 
-  defp prepare_case("local_exec", _relay_name, _module, _timeout_ms), do: :ok
-
   defp fetch_option(opts, key, default) do
     case Keyword.fetch(opts, key) do
       {:ok, nil} -> default
@@ -347,7 +336,7 @@ defmodule GiocciBench.Measure.Single do
 
   defp normalize_cases(cases) when is_list(cases) do
     normalized = Enum.map(cases, &to_string/1)
-    invalid = Enum.reject(normalized, &(&1 in @supported_cases))
+    invalid = Enum.reject(normalized, &(&1 in @default_cases))
 
     if invalid == [] do
       normalized

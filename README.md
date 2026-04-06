@@ -46,6 +46,7 @@ giocci の主要処理として、`lib/giocci_bench/samples/` 配下のベンチ
 比較用に、同一のサンプルモジュールをローカルで直接実行する `local_exec` を計測できます。
 
 - 計測は `mix giocci_bench.local` として呼び出せる
+- ローカル比較計測では ping 計測を行わない
 
 #### シーケンス計測
 
@@ -80,7 +81,6 @@ giocci_bench_output/
 giocci_bench_output/
   session_20260309-140530/
     meta.json
-    ping.csv
     local_exec.csv
 ```
 
@@ -120,7 +120,16 @@ giocci_bench_output/
   "cases": {
     "register_client": "{Giocci, :register_client, [\"giocci_relay\", [timeout: 5000, measure_to: nil]]}",
     "save_module": "{Giocci, :save_module, [\"giocci_relay\", GiocciBench.Samples.Sieve, [timeout: 5000, measure_to: nil]]}",
-    "exec_func": "{Giocci, :exec_func, [\"giocci_relay\", {GiocciBench.Samples.Sieve, :run, [[1000000]]}, [timeout: 5000, measure_to: nil]]}",
+    "exec_func": "{Giocci, :exec_func, [\"giocci_relay\", {GiocciBench.Samples.Sieve, :run, [[1000000]]}, [timeout: 5000, measure_to: nil]]}"
+  }
+}
+```
+
+ローカル比較計測では `cases` に `local_exec` の mfargs を 1 件だけ記録します。
+
+```json
+{
+  "cases": {
     "local_exec": "{GiocciBench.Samples.Sieve, :run, [[1000000]]}"
   }
 }
@@ -318,9 +327,6 @@ mix giocci_bench.sequence --iterations 10
 - `--warmup` - ケースごとのウォームアップ回数（デフォルト: 1）
 - `--iterations` - ケースごとの計測回数（デフォルト: 5）
 - `--out-dir` - CSV 出力ディレクトリ（デフォルト: giocci_bench_output）
-- `--no-ping` - ping 計測を無効化（デフォルト: 有効）
-- `--ping-targets` - ping ターゲット（カンマ区切り）（デフォルト: 127.0.0.1）
-- `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）
 - `--include-timestamps` - 計算元タイムスタンプ列をCSVに含める（デフォルト: 無効）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
 
