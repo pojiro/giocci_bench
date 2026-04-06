@@ -21,7 +21,7 @@ defmodule GiocciBench.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:giocci, "~> 0.3.0", runtime: Mix.env() != :test},
+      {:giocci, "== 0.4.1", runtime: Mix.env() != :test},
       {:nimble_csv, "~> 1.2"},
       {:os_info_measurer,
        git: "https://github.com/biyooon-ex/os_info_measurer.git", tag: "v0.1.3"}
