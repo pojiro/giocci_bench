@@ -126,6 +126,11 @@ defmodule GiocciBench.Measure.Local do
 
   defp warmup_runs(_count, _mfargs), do: :ok
 
+  defp measure_iterations(iterations, _mfargs, _run_id, _warmup_count, _columns)
+       when iterations < 1 do
+    raise ArgumentError, "iterations must be >= 1, got: #{iterations}"
+  end
+
   defp measure_iterations(iterations, mfargs, run_id, warmup_count, columns) do
     IO.write("  Measuring: ")
 
