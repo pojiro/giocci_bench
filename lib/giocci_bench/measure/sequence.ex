@@ -139,6 +139,18 @@ defmodule GiocciBench.Measure.Sequence do
 
   defp warmup_runs(_count, _relay_name, _mfargs, _timeout_ms), do: :ok
 
+  defp measure_iterations(
+         _case_id,
+         iterations,
+         _mfargs,
+         _run_id,
+         _warmup_count,
+         _columns
+       )
+       when iterations < 1 do
+    raise ArgumentError, "iterations must be >= 1, got: #{iterations}"
+  end
+
   defp measure_iterations(iterations, relay_name, mfargs, run_id, warmup_count, timeout_ms) do
     IO.write("  Measuring: ")
 
@@ -281,8 +293,12 @@ defmodule GiocciBench.Measure.Sequence do
   defp default_mfargs do
     Application.get_env(
       :giocci_bench,
-      :sequence_measure_mfargs,
-      {GiocciBench.Samples.Add, :run, [[1, 2]]}
+      :measure_mfargs,
+      Application.get_env(
+        :giocci_bench,
+        :sequence_measure_mfargs,
+        {GiocciBench.Samples.Add, :run, [[1, 2]]}
+      )
     )
   end
 end
