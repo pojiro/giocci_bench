@@ -387,6 +387,8 @@ mix giocci_bench.sequence --iterations 10
 
 本機能はGitHub Copilotで実装されています（？？
 
+### 単体セッションの可視化
+
 ```bash
 # 最新セッションの CSV をグラフ化して report.html を生成
 mix giocci_bench.visualize
@@ -419,6 +421,32 @@ mix giocci_bench.visualize --open
 - セッションタイトル（`meta.json` の `session_title` がある場合はそれを表示し、未指定時は固定タイトル `Giocci Bench Visualization` を表示）
 - セッションディレクトリ名とレポート生成時刻
 - 計測対象の MFArgs（`meta.json` の `cases`）
+
+### 複数セッションの比較
+
+```bash
+# 同一タスクで実行した複数セッションを箱ひげ図で比較
+mix giocci_bench.visualize.compare \
+  --session-dir giocci_bench_output/session_20260407-100000-sequence-nightly \
+  --session-dir giocci_bench_output/session_20260407-101000-sequence-baseline
+
+# 出力先を指定（未指定時は giocci_bench_output/comparison_<日時>/report.html）
+mix giocci_bench.visualize.compare \
+  --session-dir giocci_bench_output/session_20260407-100000-sequence-nightly \
+  --session-dir giocci_bench_output/session_20260407-101000-sequence-baseline \
+  --output tmp/compare_report.html
+```
+
+`mix giocci_bench.visualize.compare` の主な仕様:
+
+- `--session-dir` を2つ以上指定して比較（同一 Mix タスク種別のセッションのみ許可）
+  - セッションが異なる種別（single/sequence/local）ならエラー
+- `--os-info` で取得した CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）も箱ひげ図で比較
+  - 指定したセッションのいずれかに os-info CSV が不足している場合は、不足セッション名を含めてエラー
+- 凡例ラベルは各 `meta.json` の `title` を優先
+  - `title` がない場合は `A`, `B`, ... で代用
+- 比較レポートの既定出力先は `giocci_bench_output/comparison_<日時>/report.html`
+- 各比較グラフについて CSV/SVG を `giocci_bench_output/comparison_<日時>/report/` に出力
 
 ## Docker での実行
 
