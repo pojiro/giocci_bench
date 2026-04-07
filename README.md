@@ -95,10 +95,16 @@ giocci_bench_output/
 ```
 
 - 出力先ディレクトリのデフォルトは `giocci_bench_output`
-- `session_<run_id>-<mode>` ディレクトリ名は実行開始時刻（UTC）を `YYYYMMDD-HHMMSS` 形式にしたものと計測モード（`single` / `local` / `sequence` / `ping`）を `-` で連結したもの
-- `--title` 指定時は `session_<run_id>-<mode>-<title>` 形式になり、`/` と `\` は `_` に置換
+- ディレクトリの命名規則は `session_<run_id>-<task>[-<title>]`
+  - `run_id` は実行開始時刻（UTC）の `YYYYMMDD-HHMMSS` 形式
+  - `task` は実行したMixタスク名
+    - 単体計測のディレクトリ名は `session_<run_id>-single`
+    - シーケンス計測のディレクトリ名は `session_<run_id>-sequence`
+    - ローカル比較計測のディレクトリ名は `session_<run_id>-local`
+  - `--title` 指定時は `session_<run_id>-<task>-<title>` 形式になり、`/` と `\` は `_` に置換
 - 単体計測結果は `case_id` ごとに別ファイルに分割（例: `register_client.csv`, `save_module.csv`）
 - シーケンス計測結果は `sequence.csv` に出力
+- ローカル比較計測結果は `local_exec.csv` に出力
 - `--os-info` 指定時は実行モードに応じた OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）を同じディレクトリに保存
 
 ### メタデータ仕様 (meta.json)
@@ -106,6 +112,7 @@ giocci_bench_output/
 計測セッション全体の環境情報と、計測ケース説明を JSON で記録します。
 
 - `cases` には各ケースの実行時の `{module, function, args}` を `inspect/1` で文字列化した値が記録されます。
+- `measure_mfargs` には設定/実行時に使った計測対象 mfargs（`config/config.exs` の `measure_mfargs` など）が `inspect/1` で記録されます。
 - giocci のケースは引数末尾のオプション（`timeout` と `measure_to`）も含まれます。
 - 単体計測では `measure_to` は meta.json では `nil` で記録されますが、実行時には計測用 PID が注入されます。
 - `measure_mfargs` には計測対象として設定された mfargs が `inspect/1` で文字列化されて記録されます（`cases` 内の個別ケースの mfargs とは異なります）。
@@ -376,6 +383,43 @@ mix giocci_bench.sequence --iterations 10
 - `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
 
+## 可視化
+
+本機能はGitHub Copilotで実装されています（？？
+
+```bash
+# 最新セッションの CSV をグラフ化して report.html を生成
+mix giocci_bench.visualize
+
+# セッションを指定してグラフ化
+mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137
+
+# 出力先を指定
+mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137 --output tmp/bench_report.html
+
+# report.html を生成してブラウザで開く
+mix giocci_bench.visualize --open
+```
+
+- `--out-dir` - `session_*` を含む出力ディレクトリ（デフォルト: giocci_bench_output）
+- `--session-dir` - 可視化対象のセッションディレクトリを明示指定
+- `--output` - 生成する HTML レポートの出力パス（デフォルト: `<session_dir>/report.html`）
+- `--open` - 生成後に既定ブラウザで HTML を開く
+
+`mix giocci_bench.visualize` はセッション内の以下の CSV を自動検出して可視化します。
+
+- 単体/シーケンス計測 CSV（`register_client.csv`, `save_module.csv`, `exec_func.csv`, `local_exec.csv`, `sequence.csv`）
+- ping 計測 CSV（`ping.csv`）
+- OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）
+
+レポートには折れ線グラフと、各列の基本統計（count, mean, median, min, max, stddev）が含まれます。
+
+ヘッダには以下の情報が表示されます。
+
+- セッションタイトル（`meta.json` の `session_title` がある場合はそれを表示し、未指定時は固定タイトル `Giocci Bench Visualization` を表示）
+- セッションディレクトリ名とレポート生成時刻
+- 計測対象の MFArgs（`meta.json` の `cases`）
+
 ## Docker での実行
 
 このリポジトリには Docker Compose でそのまま使える開発用コンテナを用意しています。
@@ -422,3 +466,4 @@ mix giocci_bench.sequence
 - `chrony` はイメージ内にインストールされますが、systemd を使わないためデーモンは自動起動しません。
 - Mix / Hex のホームディレクトリは Docker volume に保持されるため、コンテナを作り直してもキャッシュが残ります。
 - ベンチマーク結果は bind mount されたワークスペース側に出力されます。
+
