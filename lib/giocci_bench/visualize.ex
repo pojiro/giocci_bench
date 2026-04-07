@@ -423,7 +423,7 @@ defmodule GiocciBench.Visualize do
       "charts" =>
         Enum.reject(
           [
-            chart("Timing", "iteration", "ms", timing_series),
+            chart("Elapsed", "iteration", "ms", timing_series),
             chart("Communication", "iteration", "ms", comm_series)
           ],
           &is_nil/1
