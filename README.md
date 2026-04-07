@@ -383,6 +383,43 @@ mix giocci_bench.sequence --iterations 10
 - `--ping-count` - 各ターゲットへの ping 回数（デフォルト: 5）
 - `--os-info` - OS情報計測を有効化（100ms周期、warmup後〜計測完了まで、デフォルト: 無効）
 
+### マトリクス実行スクリプト（single/sequence × 2 endpoints × 4 apps）
+
+`scripts/run_bench_matrix.sh` を使うと、次の組み合わせをまとめて実行できます。
+
+- Mix タスク: `single`, `sequence`
+- endpoint 設定: `ZENOH_EP_CONFIG1`（必須）, `ZENOH_EP_CONFIG2`（任意）
+- アプリ設定: `sieve`, `big_beam`, `cpu_eater`, `memory_eater`
+
+`config/config.exs` の `measure_mfargs` は app ごとに自動で書き換えられ、実行終了時に元の内容へ復元されます。
+
+```bash
+# 1) 実行権限を付与（初回のみ）
+chmod +x scripts/run_bench_matrix.sh
+
+# 2) endpoint を設定して実行（config1 のみ）
+ZENOH_EP_CONFIG1="tcp/192.168.0.10:7447" \
+./scripts/run_bench_matrix.sh
+
+# 3) endpoint を2つ設定して実行（config1 + config2）
+ZENOH_EP_CONFIG1="tcp/192.168.0.10:7447" \
+ZENOH_EP_CONFIG2="tcp/192.168.0.11:7447" \
+./scripts/run_bench_matrix.sh
+```
+
+各実行は内部的に次の形式で呼び出されます。
+
+```bash
+ZENOHD_CONNECT_ENDPOINTS="<EP>" mix giocci_bench.<single|sequence> --iterations 1000 --title <configX-appY>
+```
+
+このとき `appY` は次の対応で付与されます。
+
+- `appA` -> `sieve`
+- `appB` -> `big_beam`
+- `appC` -> `cpu_eater`
+- `appD` -> `memory_eater`
+
 ## 可視化
 
 本機能はGitHub Copilotで実装されています（？？
