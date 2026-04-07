@@ -399,7 +399,7 @@ mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-10
 # ワイルドカードでセッション指定（パターンに一致するセッション全てを一括処理）
 mix giocci_bench.visualize --session-dir "giocci_bench_output/session_20260406-10*"
 
-# 出力先を指定（単体セッション или ワイルドカードが1つのみマッチの場合に有効）
+# 出力先を指定（単体セッションまたはワイルドカードが1つのみマッチの場合に有効）
 mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137 --output tmp/bench_report.html
 
 # report.html を生成してブラウザで開く

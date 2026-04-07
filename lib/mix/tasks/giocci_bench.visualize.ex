@@ -32,23 +32,29 @@ defmodule Mix.Tasks.GiocciBench.Visualize do
       open_flag = Keyword.get(opts, :open, false)
       custom_output = Keyword.get(opts, :output)
 
-      results =
+      session_count = length(session_dirs)
+
+      {successes, failures} =
         session_dirs
         |> Enum.map(fn session_dir ->
           output =
-            if custom_output && length(session_dirs) == 1,
+            if custom_output && session_count == 1,
               do: custom_output,
               else: Path.join(session_dir, "report.html")
 
-          Visualize.generate_report(session_dir, output)
+          {session_dir, Visualize.generate_report(session_dir, output)}
         end)
-        |> Enum.reject(&match?({:error, _}, &1))
+        |> Enum.split_with(fn {_dir, result} -> match?({:ok, _}, result) end)
 
-      if results == [] do
+      Enum.each(failures, fn {session_dir, {:error, reason}} ->
+        Mix.shell().error("failed to generate report for #{session_dir}: #{inspect(reason)}")
+      end)
+
+      if successes == [] do
         Mix.raise("no CSV files found in any session directory")
       end
 
-      Enum.each(results, fn {:ok, report_path} ->
+      Enum.each(successes, fn {_dir, {:ok, report_path}} ->
         Mix.shell().info("visualization report created: #{report_path}")
         if open_flag, do: open_in_browser(report_path)
       end)
