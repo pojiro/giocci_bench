@@ -7,7 +7,7 @@ defmodule GiocciBench.Samples.MemoryEater do
 
   ## 動作
 
-  - 指定されたサイズ（デフォルト: 1000 MiB）のメモリをチャンク単位で確保
+  - 指定されたサイズ（デフォルト: 100 MiB）のメモリをチャンク単位で確保
   - 確保したメモリはリストに保持され、関数終了まで解放されない
   - 外部計測ツールでメモリ使用量の増加を観察可能
 
@@ -19,7 +19,7 @@ defmodule GiocciBench.Samples.MemoryEater do
   @impl true
   def run([]) do
     start_time = System.os_time()
-    result = alloc_memory(1000, 10)
+    result = alloc_memory(100, 10)
     end_time = System.os_time()
 
     elapsed_ms =
