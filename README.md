@@ -410,7 +410,7 @@ ZENOH_EP_CONFIG2="tcp/192.168.0.11:7447" \
 各実行は内部的に次の形式で呼び出されます。
 
 ```bash
-ZENOHD_CONNECT_ENDPOINTS="<EP>" mix giocci_bench.<single|sequence> --iterations 1000 --title <configX-appY>
+ZENOHD_CONNECT_ENDPOINTS="<EP>" mix giocci_bench.<single|sequence> --os-info --iterations 100 --title <configX-appY>
 ```
 
 このとき `appY` は次の対応で付与されます。

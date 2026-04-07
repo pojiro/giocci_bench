@@ -25,9 +25,11 @@ if ! command -v mix >/dev/null 2>&1; then
   exit 1
 fi
 
-ORIGINAL_CONFIG_CONTENT="$(cat "$CONFIG_FILE")"
+ORIGINAL_CONFIG_BACKUP="$(mktemp)"
+cp "$CONFIG_FILE" "$ORIGINAL_CONFIG_BACKUP"
 restore_config() {
-  printf '%s' "$ORIGINAL_CONFIG_CONTENT" > "$CONFIG_FILE"
+  cp "$ORIGINAL_CONFIG_BACKUP" "$CONFIG_FILE"
+  rm -f "$ORIGINAL_CONFIG_BACKUP"
 }
 trap restore_config EXIT
 
@@ -54,7 +56,8 @@ replace_measure_mfargs() {
       ;;
   esac
 
-  perl -i -pe "s/^  measure_mfargs: .*/  measure_mfargs: ${mfargs}/" "$CONFIG_FILE"
+  sed "s/^  measure_mfargs: .*/  measure_mfargs: ${mfargs}/" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" \
+    && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
 }
 
 run_mix_task() {
