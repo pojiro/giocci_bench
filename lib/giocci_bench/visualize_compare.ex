@@ -5,6 +5,7 @@ defmodule GiocciBench.VisualizeCompare do
   alias NimbleCSV.RFC4180, as: CSV
 
   @comparable_columns ["elapsed_ms", "function_elapsed_ms"]
+  @cpu_columns ["user", "nice", "system", "idle", "iowait", "irq", "softirq", "steal"]
 
   def generate_report(session_dirs, output_path) when is_list(session_dirs) do
     with :ok <- validate_session_count(session_dirs),
@@ -201,20 +202,61 @@ defmodule GiocciBench.VisualizeCompare do
   end
 
   defp build_metrics(file, rows) do
-    metric_columns(file, rows)
-    |> Enum.flat_map(fn column ->
-      values =
-        rows
-        |> Enum.map(&(Map.get(&1, column) |> parse_float()))
-        |> Enum.reject(&is_nil/1)
+    if String.ends_with?(file, "_os_info_proc_stat.csv") do
+      values = cpu_usage_values(rows)
+      if values == [], do: %{}, else: %{"cpu_usage_pct" => values}
+    else
+      metric_columns(file, rows)
+      |> Enum.flat_map(fn column ->
+        values =
+          rows
+          |> Enum.map(&(Map.get(&1, column) |> parse_float()))
+          |> Enum.reject(&is_nil/1)
 
-      if values == [] do
-        []
+        if values == [] do
+          []
+        else
+          [{column, values}]
+        end
+      end)
+      |> Map.new()
+    end
+  end
+
+  defp cpu_usage_values(rows) do
+    rows
+    |> Enum.map(fn row ->
+      values =
+        Map.new(@cpu_columns, fn key ->
+          {key, parse_float(Map.get(row, key))}
+        end)
+
+      {parse_float(Map.get(row, "time[ms]")), values}
+    end)
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map(fn [{_t1, v1}, {_t2, v2}] ->
+      total1 = sum_cpu(v1)
+      total2 = sum_cpu(v2)
+      idle1 = (v1["idle"] || 0.0) + (v1["iowait"] || 0.0)
+      idle2 = (v2["idle"] || 0.0) + (v2["iowait"] || 0.0)
+
+      total_delta = total2 - total1
+      idle_delta = idle2 - idle1
+
+      if total_delta <= 0 do
+        nil
       else
-        [{column, values}]
+        100.0 * (1.0 - idle_delta / total_delta)
       end
     end)
-    |> Map.new()
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp sum_cpu(values) do
+    @cpu_columns
+    |> Enum.reduce(0.0, fn key, acc ->
+      acc + (values[key] || 0.0)
+    end)
   end
 
   defp metric_columns(file, rows) do
@@ -322,7 +364,7 @@ defmodule GiocciBench.VisualizeCompare do
         extract_unit(metric) || "value"
 
       String.ends_with?(file, "_os_info_proc_stat.csv") ->
-        "ticks"
+        "pct"
 
       true ->
         "ms"

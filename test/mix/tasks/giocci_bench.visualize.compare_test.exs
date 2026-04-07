@@ -58,6 +58,8 @@ defmodule Mix.Tasks.GiocciBench.Visualize.CompareTest do
     assert report =~ "\"subtitle\": \"sequence.csv\""
     assert report =~ "\"subtitle\": \"sequence_os_info_free.csv\""
     assert report =~ "\"subtitle\": \"sequence_os_info_proc_stat.csv\""
+    assert report =~ "\"title\": \"cpu_usage_pct\""
+    refute report =~ "\"title\": \"user\""
 
     assert order_in_text(report, [
              "\"row_kind\": \"runtime\"",

@@ -413,6 +413,8 @@ mix giocci_bench.visualize --open
 - 単体/シーケンス計測 CSV（`register_client.csv`, `save_module.csv`, `exec_func.csv`, `local_exec.csv`, `sequence.csv`）
 - ping 計測 CSV（`ping.csv`）
 - OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）
+  - `*_os_info_proc_stat.csv` は列ごとの生値ではなく、差分から算出した `cpu_usage_pct`（%）を表示
+  - 計算式: `100 * (1 - idle_delta / total_delta)`
 
 レポートには折れ線グラフと、各列の基本統計（count, mean, median, min, max, stddev）が含まれます。
 
@@ -443,7 +445,8 @@ mix giocci_bench.visualize.compare \
   - セッションが異なる種別（single/sequence/local）ならエラー
 - `--os-info` で取得した CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）も箱ひげ図で比較
   - 指定したセッションのいずれかに os-info CSV が不足している場合は、不足セッション名を含めてエラー
-- 凡例ラベルは各 `meta.json` の `title` を優先
+  - `*_os_info_proc_stat.csv` は単一セッション可視化と同じく、差分から算出した `cpu_usage_pct`（%）を比較
+- 凡例ラベルは各 `meta.json` の `title` を優っk
   - `title` がない場合は `A`, `B`, ... で代用
 - 比較レポートの既定出力先は `giocci_bench_output/comparison_<日時>/report.html`
 - 各比較グラフについて CSV/SVG を `giocci_bench_output/comparison_<日時>/report/` に出力
