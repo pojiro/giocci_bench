@@ -115,6 +115,76 @@ defmodule Mix.Tasks.GiocciBench.Visualize.CompareTest do
   end
 
   @tag :tmp_dir
+  test "creates comparison report for single mode with sub-rows and all columns", %{
+    tmp_dir: tmp_dir
+  } do
+    out_dir = Path.join(tmp_dir, "giocci_bench_output")
+    s1 = Path.join(out_dir, "session_20260407-150000-single-a")
+    s2 = Path.join(out_dir, "session_20260407-150100-single-b")
+    File.mkdir_p!(s1)
+    File.mkdir_p!(s2)
+
+    csv_header =
+      "run_id,case_id,iteration,elapsed_ms,function_elapsed_ms,warmup,client_to_relay,relay_to_client,relay_to_engine,engine_to_relay,client_to_engine,engine_to_client\n"
+
+    register_client_csv =
+      csv_header <>
+        "1,register_client,1,31.0,,1,14.0,16.0,,,,\n" <>
+        "1,register_client,2,28.0,,1,17.0,10.0,,,,\n"
+
+    save_module_csv =
+      csv_header <>
+        "1,save_module,1,54.0,,1,22.0,23.0,1.1,0.7,,\n" <>
+        "1,save_module,2,38.0,,1,22.0,6.0,1.2,1.8,,\n"
+
+    exec_func_csv =
+      csv_header <>
+        "1,exec_func,1,2294.0,2239.0,1,17.0,7.0,,,22.0,7.0\n" <>
+        "1,exec_func,2,2293.0,2210.0,1,17.0,24.0,,,20.0,21.0\n"
+
+    os_info_free = "time[ms],total[KiB],used[KiB]\n1000,100000,42000\n1100,100010,42100\n"
+    os_info_proc = "time[ms],user,system,idle\n1000,10,3,90\n1100,11,4,91\n"
+
+    for session <- [s1, s2] do
+      File.write!(Path.join(session, "register_client.csv"), register_client_csv)
+      File.write!(Path.join(session, "save_module.csv"), save_module_csv)
+      File.write!(Path.join(session, "exec_func.csv"), exec_func_csv)
+
+      for stem <- ["register_client", "save_module", "exec_func"] do
+        File.write!(Path.join(session, "#{stem}_os_info_free.csv"), os_info_free)
+        File.write!(Path.join(session, "#{stem}_os_info_proc_stat.csv"), os_info_proc)
+      end
+    end
+
+    output = Path.join(tmp_dir, "comparison_single/report.html")
+    CompareTask.run(["--session-dir", s1, "--session-dir", s2, "--output", output])
+
+    assert File.exists?(output)
+    report = File.read!(output)
+
+    assert report =~ "\"mode\": \"single\""
+
+    # sub-row keys present for all three files
+    assert report =~ "\"sub_row_key\": \"register_client\""
+    assert report =~ "\"sub_row_key\": \"save_module\""
+    assert report =~ "\"sub_row_key\": \"exec_func\""
+
+    # columns beyond elapsed_ms/function_elapsed_ms are present
+    assert report =~ "\"title\": \"client_to_relay\""
+    assert report =~ "\"title\": \"relay_to_client\""
+
+    # sub-rows appear in order: register_client → save_module → exec_func
+    assert order_in_text(report, [
+             "\"sub_row_key\": \"register_client\"",
+             "\"sub_row_key\": \"save_module\"",
+             "\"sub_row_key\": \"exec_func\""
+           ])
+
+    assert_receive {:mix_shell, :info, [message]}
+    assert message =~ "comparison report created:"
+  end
+
+  @tag :tmp_dir
   test "raises when mixed benchmark session types are given", %{tmp_dir: tmp_dir} do
     out_dir = Path.join(tmp_dir, "giocci_bench_output")
     sequence_session = Path.join(out_dir, "session_20260407-110000-sequence")

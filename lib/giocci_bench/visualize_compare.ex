@@ -6,6 +6,18 @@ defmodule GiocciBench.VisualizeCompare do
 
   @comparable_columns ["elapsed_ms", "function_elapsed_ms"]
   @cpu_columns ["user", "nice", "system", "idle", "iowait", "irq", "softirq", "steal"]
+  @single_runtime_files ["register_client.csv", "save_module.csv", "exec_func.csv"]
+  @single_runtime_columns [
+    "elapsed_ms",
+    "function_elapsed_ms",
+    "client_to_relay",
+    "relay_to_client",
+    "relay_to_engine",
+    "engine_to_relay",
+    "client_to_engine",
+    "engine_to_client"
+  ]
+  @single_runtime_order ["register_client", "save_module", "exec_func"]
 
   def generate_report(session_dirs, output_path) when is_list(session_dirs) do
     with :ok <- validate_session_count(session_dirs),
@@ -272,6 +284,9 @@ defmodule GiocciBench.VisualizeCompare do
         columns
         |> Enum.reject(&(&1 == "time[ms]"))
 
+      file in @single_runtime_files ->
+        @single_runtime_columns |> Enum.filter(&(&1 in columns))
+
       true ->
         @comparable_columns
     end
@@ -302,7 +317,7 @@ defmodule GiocciBench.VisualizeCompare do
       sessions
       |> Enum.flat_map(fn session -> Map.keys(session.data_files) end)
       |> Enum.uniq()
-      |> Enum.sort_by(fn file -> {row_order(file_row_kind(file)), file} end)
+      |> Enum.sort_by(fn file -> {row_order(file_row_kind(file)), sub_row_order(file), file} end)
 
     for file <- files,
         metric <- metric_candidates(sessions, file),
@@ -316,6 +331,7 @@ defmodule GiocciBench.VisualizeCompare do
         "subtitle" => file,
         "row_kind" => row_kind,
         "row_title" => row_title(row_kind),
+        "sub_row_key" => sub_row_key(file),
         "y_label" => metric_y_label(file, metric),
         "boxes" => boxes
       }
@@ -334,9 +350,15 @@ defmodule GiocciBench.VisualizeCompare do
       end)
       |> Enum.uniq()
 
-    case file_row_kind(file) do
-      "runtime" -> Enum.filter(@comparable_columns, &(&1 in available_metrics))
-      _ -> Enum.sort(available_metrics)
+    cond do
+      file in @single_runtime_files ->
+        Enum.filter(@single_runtime_columns, &(&1 in available_metrics))
+
+      file_row_kind(file) == "runtime" ->
+        Enum.filter(@comparable_columns, &(&1 in available_metrics))
+
+      true ->
+        Enum.sort(available_metrics)
     end
   end
 
@@ -357,6 +379,21 @@ defmodule GiocciBench.VisualizeCompare do
   defp row_title("cpu"), do: "CPU Usage"
   defp row_title("memory"), do: "Memory"
   defp row_title(_), do: "Other"
+
+  defp sub_row_key(file) do
+    if file in @single_runtime_files do
+      Path.basename(file, ".csv")
+    else
+      nil
+    end
+  end
+
+  defp sub_row_order(file) do
+    case Enum.find_index(@single_runtime_order, fn stem -> "#{stem}.csv" == file end) do
+      nil -> 99
+      index -> index
+    end
+  end
 
   defp metric_y_label(file, metric) do
     cond do
@@ -605,6 +642,13 @@ defmodule GiocciBench.VisualizeCompare do
             text-transform: uppercase;
           }
 
+          .sub-row-title {
+            margin: 14px 0 6px;
+            font-size: 13px;
+            color: var(--ink);
+            font-weight: 600;
+          }
+
           .card {
             background: var(--card);
             border: 1px solid var(--line);
@@ -752,6 +796,20 @@ defmodule GiocciBench.VisualizeCompare do
               'mode: ' + DATA.mode + ' | sessions: ' + DATA.session_names.join(', ') + ' | generated_at: ' + DATA.generated_at
             ));
 
+            function makeCard(chart) {
+              const card = el('div', { class: 'card' });
+              card.appendChild(el('h2', {}, chart.title));
+              card.appendChild(el('div', { class: 'subtitle' }, chart.subtitle));
+              const canvas = el('canvas');
+              card.appendChild(canvas);
+              pending.push({ canvas: canvas, chart: chart });
+              const tools = el('div', { class: 'tools' });
+              if (chart.csv_file) tools.appendChild(el('a', { href: chart.csv_file, download: '' }, 'Download CSV'));
+              if (chart.svg_file) tools.appendChild(el('a', { href: chart.svg_file, download: '' }, 'Download SVG'));
+              card.appendChild(tools);
+              return card;
+            }
+
             const rowKinds = ['runtime', 'cpu', 'memory'];
 
             rowKinds.forEach(function(kind) {
@@ -761,26 +819,22 @@ defmodule GiocciBench.VisualizeCompare do
               const block = el('section', { class: 'row-block' });
               block.appendChild(el('h2', { class: 'row-title' }, rowCharts[0].row_title || kind));
 
-              const grid = el('div', { class: 'grid' });
+              if (kind === 'runtime' && DATA.mode === 'single') {
+                var subKeys = ['register_client', 'save_module', 'exec_func'];
+                subKeys.forEach(function(subKey) {
+                  var subCharts = rowCharts.filter(function(c) { return c.sub_row_key === subKey; });
+                  if (subCharts.length === 0) return;
+                  block.appendChild(el('h3', { class: 'sub-row-title' }, subKey));
+                  var grid = el('div', { class: 'grid' });
+                  subCharts.forEach(function(chart) { grid.appendChild(makeCard(chart)); });
+                  block.appendChild(grid);
+                });
+              } else {
+                const grid = el('div', { class: 'grid' });
+                rowCharts.forEach(function(chart) { grid.appendChild(makeCard(chart)); });
+                block.appendChild(grid);
+              }
 
-              rowCharts.forEach(function(chart) {
-                const card = el('div', { class: 'card' });
-                card.appendChild(el('h2', {}, chart.title));
-                card.appendChild(el('div', { class: 'subtitle' }, chart.subtitle));
-
-                const canvas = el('canvas');
-                card.appendChild(canvas);
-                pending.push({ canvas: canvas, chart: chart });
-
-                const tools = el('div', { class: 'tools' });
-                if (chart.csv_file) tools.appendChild(el('a', { href: chart.csv_file, download: '' }, 'Download CSV'));
-                if (chart.svg_file) tools.appendChild(el('a', { href: chart.svg_file, download: '' }, 'Download SVG'));
-                card.appendChild(tools);
-
-                grid.appendChild(card);
-              });
-
-              block.appendChild(grid);
               app.appendChild(block);
             });
 
