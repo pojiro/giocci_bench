@@ -156,6 +156,50 @@ defmodule Mix.Tasks.GiocciBench.VisualizeTest do
            ])
   end
 
+  @tag :tmp_dir
+  test "expands wildcard in --session-dir", %{tmp_dir: tmp_dir} do
+    out_dir = Path.join(tmp_dir, "giocci_bench_output")
+    session = Path.join(out_dir, "session_20260407-140000-single-test")
+    File.mkdir_p!(session)
+
+    File.write!(
+      Path.join(session, "register_client.csv"),
+      "run_id,case_id,iteration,elapsed_ms\n1,register_client,1,10.0\n"
+    )
+
+    VisualizeTask.run(["--session-dir", Path.join(out_dir, "session_20260407-140*-single-*")])
+
+    report_path = Path.join(session, "report.html")
+    assert File.exists?(report_path)
+    report = File.read!(report_path)
+    assert report =~ "\"name\": \"elapsed_ms\""
+  end
+
+  @tag :tmp_dir
+  test "batch processes multiple sessions matching wildcard", %{tmp_dir: tmp_dir} do
+    out_dir = Path.join(tmp_dir, "giocci_bench_output")
+    s1 = Path.join(out_dir, "session_20260407-150000-single-a")
+    s2 = Path.join(out_dir, "session_20260407-150100-single-b")
+    File.mkdir_p!(s1)
+    File.mkdir_p!(s2)
+
+    csv = "run_id,case_id,iteration,elapsed_ms\n1,register_client,1,10.0\n"
+    File.write!(Path.join(s1, "register_client.csv"), csv)
+    File.write!(Path.join(s2, "register_client.csv"), csv)
+
+    VisualizeTask.run(["--session-dir", Path.join(out_dir, "session_20260407-150*-single-*")])
+
+    report1 = Path.join(s1, "report.html")
+    report2 = Path.join(s2, "report.html")
+    assert File.exists?(report1)
+    assert File.exists?(report2)
+
+    assert_receive {:mix_shell, :info, [msg1]}
+    assert msg1 =~ "visualization report created:"
+    assert_receive {:mix_shell, :info, [msg2]}
+    assert msg2 =~ "visualization report created:"
+  end
+
   defp order_in_text(text, patterns) do
     case Enum.reduce_while(patterns, {:ok, -1}, fn pattern, {:ok, last_index} ->
            case :binary.match(text, pattern) do

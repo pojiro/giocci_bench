@@ -396,7 +396,10 @@ mix giocci_bench.visualize
 # セッションを指定してグラフ化
 mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137
 
-# 出力先を指定
+# ワイルドカードでセッション指定（パターンに一致するセッション全てを一括処理）
+mix giocci_bench.visualize --session-dir "giocci_bench_output/session_20260406-10*"
+
+# 出力先を指定（単体セッション или ワイルドカードが1つのみマッチの場合に有効）
 mix giocci_bench.visualize --session-dir giocci_bench_output/session_20260406-103137 --output tmp/bench_report.html
 
 # report.html を生成してブラウザで開く
@@ -404,9 +407,9 @@ mix giocci_bench.visualize --open
 ```
 
 - `--out-dir` - `session_*` を含む出力ディレクトリ（デフォルト: giocci_bench_output）
-- `--session-dir` - 可視化対象のセッションディレクトリを明示指定
-- `--output` - 生成する HTML レポートの出力パス（デフォルト: `<session_dir>/report.html`）
-- `--open` - 生成後に既定ブラウザで HTML を開く
+- `--session-dir` - 可視化対象のセッションディレクトリを明示指定（ワイルドカード: `*`, `?`, `[...]` に対応；マッチした全セッションを一括処理）
+- `--output` - 生成する HTML レポートの出力パス（デフォルト: `<session_dir>/report.html`；複数セッション一括処理時は各セッションディレクトリ配下に自動生成）
+- `--open` - 生成後に既定ブラウザで HTML を開く（複数セッション時は全て開く）
 
 `mix giocci_bench.visualize` はセッション内の以下の CSV を自動検出して可視化します。
 

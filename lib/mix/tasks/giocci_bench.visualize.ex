@@ -13,8 +13,8 @@ defmodule Mix.Tasks.GiocciBench.Visualize do
   ## Options
 
     * `--out-dir` - Root output directory containing `session_*` (default: giocci_bench_output)
-    * `--session-dir` - Explicit session directory to visualize
-    * `--output` - Output HTML path (default: <session_dir>/report.html)
+    * `--session-dir` - Explicit session directory to visualize (supports wildcards: `*`, `?`, `[...]`; generates reports for all matching sessions)
+    * `--output` - Output HTML path (default: <session_dir>/report.html; used only for single session or if wildcard matches single)
     * `--open` - Open generated HTML in default browser
 
   """
@@ -28,36 +28,68 @@ defmodule Mix.Tasks.GiocciBench.Visualize do
 
     out_dir = Keyword.get(opts, :out_dir, "giocci_bench_output")
 
-    with {:ok, session_dir} <- resolve_session_dir(opts, out_dir),
-         {:ok, output} <- resolve_output_path(opts, session_dir),
-         {:ok, report_path} <- Visualize.generate_report(session_dir, output) do
-      Mix.shell().info("visualization report created: #{report_path}")
+    with {:ok, session_dirs} <- resolve_session_dirs(opts, out_dir) do
+      open_flag = Keyword.get(opts, :open, false)
+      custom_output = Keyword.get(opts, :output)
 
-      if Keyword.get(opts, :open, false) do
-        open_in_browser(report_path)
+      results =
+        session_dirs
+        |> Enum.map(fn session_dir ->
+          output =
+            if custom_output && length(session_dirs) == 1,
+              do: custom_output,
+              else: Path.join(session_dir, "report.html")
+
+          Visualize.generate_report(session_dir, output)
+        end)
+        |> Enum.reject(&match?({:error, _}, &1))
+
+      if results == [] do
+        Mix.raise("no CSV files found in any session directory")
       end
+
+      Enum.each(results, fn {:ok, report_path} ->
+        Mix.shell().info("visualization report created: #{report_path}")
+        if open_flag, do: open_in_browser(report_path)
+      end)
     else
       {:error, :session_not_found} ->
         Mix.raise("session directory not found. use --session-dir or check --out-dir")
-
-      {:error, :no_csv_files} ->
-        Mix.raise("no CSV files found in session directory")
     end
   end
 
-  defp resolve_session_dir(opts, out_dir) do
+  defp resolve_session_dirs(opts, out_dir) do
     case Keyword.get(opts, :session_dir) do
       nil ->
-        Visualize.latest_session_dir(out_dir)
+        with {:ok, latest} <- Visualize.latest_session_dir(out_dir) do
+          {:ok, [latest]}
+        end
 
       session_dir ->
-        if File.dir?(session_dir), do: {:ok, session_dir}, else: {:error, :session_not_found}
+        expanded = expand_session_dir(session_dir)
+
+        case expanded do
+          [] ->
+            {:error, :session_not_found}
+
+          dirs ->
+            valid_dirs = Enum.filter(dirs, &File.dir?/1)
+
+            if valid_dirs == [] do
+              {:error, :session_not_found}
+            else
+              {:ok, valid_dirs}
+            end
+        end
     end
   end
 
-  defp resolve_output_path(opts, session_dir) do
-    output = Keyword.get(opts, :output, Path.join(session_dir, "report.html"))
-    {:ok, output}
+  defp expand_session_dir(path) do
+    if String.contains?(path, ["*", "?", "["]) do
+      Path.wildcard(path)
+    else
+      [path]
+    end
   end
 
   defp open_in_browser(path) do
