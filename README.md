@@ -95,13 +95,16 @@ giocci_bench_output/
 ```
 
 - 出力先ディレクトリのデフォルトは `giocci_bench_output`
-- `run_id` は実行開始時刻（UTC）の `YYYYMMDD-HHMMSS` 形式
-- 単体計測のディレクトリ名は `session_<run_id>-single`
-- シーケンス計測のディレクトリ名は `session_<run_id>-sequence`
-- ローカル比較計測のディレクトリ名は `session_<run_id>-local`
-- `--title` 指定時は `session_<run_id>-<task>-<title>` 形式になり、`/` と `\` は `_` に置換
+- ディレクトリの命名規則は `session_<runid>-<task>[-<title>]`
+  - `run_id` は実行開始時刻（UTC）の `YYYYMMDD-HHMMSS` 形式
+  - `task` は実行したMixタスク名
+    - 単体計測のディレクトリ名は `session_<run_id>-single`
+    - シーケンス計測のディレクトリ名は `session_<run_id>-sequence`
+    - ローカル比較計測のディレクトリ名は `session_<run_id>-local`
+  - `--title` 指定時は `session_<run_id>-<task>-<title>` 形式になり、`/` と `\` は `_` に置換
 - 単体計測結果は `case_id` ごとに別ファイルに分割（例: `register_client.csv`, `save_module.csv`）
 - シーケンス計測結果は `sequence.csv` に出力
+- ローカル比較計測結果は `local_exec.csv` に出力
 - `--os-info` 指定時は実行モードに応じた OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）を同じディレクトリに保存
 
 ### メタデータ仕様 (meta.json)
