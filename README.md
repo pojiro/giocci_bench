@@ -387,6 +387,8 @@ mix giocci_bench.sequence --iterations 10
 
 本機能はGitHub Copilotで実装されています（？？
 
+### 単体セッションの可視化
+
 ```bash
 # 最新セッションの CSV をグラフ化して report.html を生成
 mix giocci_bench.visualize
@@ -411,6 +413,8 @@ mix giocci_bench.visualize --open
 - 単体/シーケンス計測 CSV（`register_client.csv`, `save_module.csv`, `exec_func.csv`, `local_exec.csv`, `sequence.csv`）
 - ping 計測 CSV（`ping.csv`）
 - OS 情報 CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）
+  - `*_os_info_proc_stat.csv` は列ごとの生値ではなく、差分から算出した `cpu_usage_pct`（%）を表示
+  - 計算式: `100 * (1 - idle_delta / total_delta)`
 
 レポートには折れ線グラフと、各列の基本統計（count, mean, median, min, max, stddev）が含まれます。
 
@@ -419,6 +423,38 @@ mix giocci_bench.visualize --open
 - セッションタイトル（`meta.json` の `session_title` がある場合はそれを表示し、未指定時は固定タイトル `Giocci Bench Visualization` を表示）
 - セッションディレクトリ名とレポート生成時刻
 - 計測対象の MFArgs（`meta.json` の `cases`）
+
+### 複数セッションの比較
+
+```bash
+# 同一タスクで実行した複数セッションを箱ひげ図で比較
+mix giocci_bench.visualize.compare \
+  --session-dir giocci_bench_output/session_20260407-100000-sequence-nightly \
+  --session-dir giocci_bench_output/session_20260407-101000-sequence-baseline
+
+# 出力先を指定（未指定時は giocci_bench_output/comparison_<日時>/report.html）
+mix giocci_bench.visualize.compare \
+  --session-dir giocci_bench_output/session_20260407-100000-sequence-nightly \
+  --session-dir giocci_bench_output/session_20260407-101000-sequence-baseline \
+  --output tmp/compare_report.html
+
+# ワイルドカード指定（ "" 囲み必須）
+mix giocci_bench.visualize.compare \
+  --session-dir "giocci_bench_output/session_20260407-10*-sequence-*"
+```
+
+`mix giocci_bench.visualize.compare` の主な仕様:
+
+- `--session-dir` を2つ以上指定して比較（同一 Mix タスク種別のセッションのみ許可）
+  - `*`, `?`, `[]` のワイルドカード指定に対応（展開結果が比較対象）
+  - セッションが異なる種別（single/sequence/local）ならエラー
+- `--os-info` で取得した CSV（`*_os_info_free.csv`, `*_os_info_proc_stat.csv`）も箱ひげ図で比較
+  - 指定したセッションのいずれかに os-info CSV が不足している場合は、不足セッション名を含めてエラー
+  - `*_os_info_proc_stat.csv` は単一セッション可視化と同じく、差分から算出した `cpu_usage_pct`（%）を比較
+- 凡例ラベルは各 `meta.json` の `title` を優先
+  - `title` がない場合は `A`, `B`, ... で代用
+- 比較レポートの既定出力先は `giocci_bench_output/comparison_<日時>/report.html`
+- 各比較グラフについて CSV/SVG を `giocci_bench_output/comparison_<日時>/report/` に出力
 
 ## Docker での実行
 
