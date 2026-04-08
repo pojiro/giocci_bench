@@ -69,9 +69,9 @@ run_mix_task() {
   (
     cd "$ROOT_DIR"
     echo "ZENOHD_CONNECT_ENDPOINTS=\"$endpoint\" \
-      mix giocci_bench.${task} --os-info --iterations 100 --title \"$title\" --visualize"
+      mix giocci_bench.${task} --os-info --iterations 50 --title \"$title\" --visualize"
     ZENOHD_CONNECT_ENDPOINTS="$endpoint" \
-      mix giocci_bench.${task} --os-info --iterations 100 --title "$title" --visualize
+      mix giocci_bench.${task} --os-info --iterations 50 --title "$title" --visualize
   )
 }
 
